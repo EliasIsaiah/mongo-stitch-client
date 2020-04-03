@@ -1,0 +1,59 @@
+<html>
+
+<head>
+	<script src="https://s3.amazonaws.com/stitch-sdks/js/bundles/4.6.0/stitch.js"></script>
+	<script>
+		// Initialize the App Client
+		const client = stitch.Stitch.initializeDefaultAppClient("blogtutorial-zwbos");
+		// Get a MongoDB Service Client
+		const mongodb = client.getServiceClient(
+			stitch.RemoteMongoClient.factory,
+			"stitch-blog-backend"
+		);
+		// Get a reference to the blog database
+		const db = mongodb.db("blog");
+
+		function displayComments() {
+			db.collection("comments")
+			.find({}, {limit: 1000})
+			.toArray()
+			.then(docs => {
+				// const html = 
+				document.getElementById("comments").innerHTML = ""
+				docs.map(doc => document.getElementById("comments").innerHTML += `<div>${doc.comment}</div>`);
+				// console.log(html);
+				// document.getElementById("comments").innerHTML = html;
+			});
+		}
+
+		function displayCommentsOnLoad() {
+			client.auth
+			.loginWithCredential(new stitch.AnonymousCredential())
+			.then(displayComments)
+			.catch(console.error);
+		}
+
+		function addComment() {
+			const newComment = document.getElementById("new_comment");
+			console.log("add comment", client.auth.user.id)
+			db.collection("comments")
+			.insertOne({ owner_id : client.auth.user.id, comment: newComment.value })
+			.then(displayComments);
+			newComment.value = "";
+		}
+	</script>
+	<title>mongo blog client</title>
+</head>
+
+<body onload="displayCommentsOnLoad()">
+	<h3>This is a great blog post</h3>
+	<div id="content">
+		I like to write about technology because I want to get on the front page of hacker news.
+	</div>
+	<hr>
+	Add comment:
+	<input id="new_comment"><input type="submit" onClick="addComment()">
+	<div id="comments"></div>
+</body>
+
+</html>
